@@ -1,0 +1,13 @@
+# Phase 1 (voice loop) dependencies. Install on top of requirements.txt:
+#   pip install -r requirements-voice.txt
+#
+# These pull in audio + speech libs. faster-whisper downloads the STT model on
+# first run. pyttsx3 drives the Windows built-in voice (engine: sapi) with no
+# extra download. Piper (engine: piper) is a separate binary + voice file, see
+# README "Upgrading her voice".
+
+faster-whisper>=1.0.0
+sounddevice>=0.4.6
+numpy>=1.24
+webrtcvad-wheels>=2.0.10    # prebuilt VAD wheels (no compiler needed on Windows)
+comtypes>=1.2.0           # native Windows SAPI access for engine: sapi

@@ -1,0 +1,3 @@
+# Phase 0 only. Later phases add faster-whisper, piper, opencv-python, etc.
+openai>=1.30.0
+PyYAML>=6.0

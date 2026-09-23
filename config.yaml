@@ -1,0 +1,104 @@
+# Project NIA -- configuration
+# Phase 0 (brain on text). All later phases append to this file.
+# Nothing hardware-dependent is baked into code. Change a value here, not the source.
+
+brain:
+  # OpenAI-compatible endpoint. This is how NIA points at her served model.
+  # Ollama native (PRD recommended Windows path):
+  #   base_url: http://localhost:11434/v1
+  #   model:    qwen2.5:7b-instruct   (or llama3.1:8b-instruct)
+  # Odysseus / vLLM / llama.cpp: point at whatever serves fastest (PRD Appendix A).
+  base_url: http://localhost:11434/v1
+  model: qwen2.5:7b-instruct-q4_K_M
+  api_key_env: NIA_BRAIN_API_KEY   # name of env var holding the key; local servers usually ignore it
+  temperature: 0.95                # higher = wilder, more human. dial down toward 0.7 if she gets unhinged
+  max_tokens: 45                   # short cap = snappier, more reactive lines. raise if she gets cut off
+  timeout_seconds: 30
+  # rolling conversation window handed back to the model each turn (pairs of lines)
+  history_turns: 8
+
+persona:
+  # Tuning levers for how human / snappy she sounds. Both default on.
+  use_few_shot: true   # inject nia/few_shot.txt example turns (teaches rhythm)
+  use_vibe: true       # append nia/vibe.txt slang palette to her prompt
+
+state:
+  # Death tracking -> lock-in escalation. Orchestrator owns this, not the LLM.
+  death_window_seconds: 180   # rolling window deaths are counted in
+  lock_in_threshold: 4        # deaths within the window that flip her to tough-love
+  lock_in_cooldown_seconds: 120  # once she has scolded, do not re-inject the note for this long
+
+# ---- Phase 1: voice loop ------------------------------------------------------
+
+gate:
+  # When she is ALLOWED to speak (the rule-based speak-gate, no LLM call).
+  cooldown_seconds: 6.0        # hard floor between her lines. she cannot talk again within this
+  silence_fill_enabled: true
+  silence_fill_seconds: 25.0   # if Lazy is quiet this long, she fills the air
+  chime_in_chance: 0.25        # chance (0..1) she reacts to a line that did NOT address her. 0 = only on name/question
+  chime_in_min_gap_seconds: 20 # minimum spacing between unprompted chime-ins, so she is present not annoying
+  name_aliases:                # what she answers to (whisper mishears "NIA" a LOT)
+    - nia
+    - nya
+    - niya
+    - naya
+    - nea
+    - neela
+    - mia
+    - miya
+    - nyah
+
+stt:
+  # Her ears. faster-whisper on CPU keeps VRAM free for the brain (PRD 9).
+  model: small.en              # English-only = more accurate at English, same speed. medium.en is even better but slower
+  device: cpu                  # cpu | cuda
+  compute_type: int8           # int8 is fast on CPU
+  language: en
+  beam_size: 5                 # 1 = fastest/greedy, 5 = more accurate. small latency cost
+  # bias Whisper toward the words it should expect, so it stops hearing Mia/Near for NIA
+  initial_prompt: "Talking to NIA on the live stream. NIA. Lazy. Lazy Prodigy."
+  input_device: 3              # mic index from `python -m sounddevice`
+  vad_aggressiveness: 3        # 0..3, higher = stricter about rejecting non-speech/noise
+  frame_ms: 30                 # webrtcvad frame size: 10, 20, or 30
+  silence_tail_ms: 600         # trailing silence that ends an utterance
+  speech_onset_ms: 180         # speech must persist this long before it counts (debounces noise blips)
+  min_speech_ms: 350           # ignore utterances shorter than this (kills phantom one-word triggers)
+  drop_phrases:                # Whisper hallucinations on silence -- dropped outright
+    - you
+    - thank you
+    - thanks for watching
+    - thank you.
+    - you.
+    - bye
+    - so
+    - okay
+    - "."
+
+tts:
+  # Her voice. Swappable engine. Start on sapi (zero setup), upgrade to piper.
+  engine: piper                # sapi | piper
+  output_device: 6             # headphones (Speakers BW01). index from `python -m sounddevice`
+  # --- sapi (Windows built-in, no download) ---
+  sapi_rate: 1                 # SAPI speed, integer -10..10. 0 = normal, higher = snappier
+  sapi_voice:                  # substring of a SAPI voice name, e.g. "Zira". null = default
+  # --- piper (neural upgrade) ---
+  piper_binary: python -m piper                  # pip package; or a path to piper.exe
+  piper_model: en_US-hfc_female-medium.onnx      # voice file, relative to the NIA folder
+
+# ---- Phase 2: eyes (game vision) ----------------------------------------------
+
+capture:
+  source: screen          # capture_card (PS5 via card) | screen (dev: grab the monitor)
+  device_index: 0         # capture_card: which video device
+  max_width: 1280         # bigger = HUD/kill-feed text is legible to the model (better event detection)
+  monitor: 1              # screen: 1 = primary monitor
+  region:                 # screen: optional [x, y, width, height]; null = whole monitor
+
+vision:
+  enabled: true           # vision ON
+  sample_interval: 2.0    # seconds between local frame checks (Stage A)
+  scene_change_threshold: 0.15   # how much must change before it bothers looking
+  vision_cooldown: 6.0    # min seconds between Gemini calls (protects latency + rate limit)
+  model: gemini-2.5-flash # confirm the current Flash model id if this errors
+  max_output_tokens: 50
+  api_key_env: GEMINI_API_KEY    # env var (or .env line) holding your Gemini key

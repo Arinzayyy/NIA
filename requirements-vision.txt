@@ -1,0 +1,11 @@
+# Phase 2 (eyes) dependencies. Install on top of the others:
+#   pip install -r requirements-vision.txt
+#
+# google-genai talks to Gemini Flash. opencv + mss grab and resize frames.
+# pillow converts a frame to the image type the Gemini SDK wants.
+
+google-genai>=1.0.0
+opencv-python>=4.8.0
+mss>=9.0.0
+pillow>=10.0.0
+numpy>=1.24

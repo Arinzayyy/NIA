@@ -1,0 +1,16 @@
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.log
+
+# Large third-party Piper voice model (download separately, see README)
+en_US-hfc_female-medium.onnx
+en_US-hfc_female-medium.onnx.json
+
+# Test artifacts
+test.wav
